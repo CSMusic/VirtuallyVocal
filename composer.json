@@ -1,7 +1,7 @@
 {
-    "name": "csmusic/virtuallyvocal",
+    "name": "csmusic/virtually-vocal-php",
     "type": "library",
-    "description": "classes for interacting with the virtually vocal api",
+    "description": "php classes for interacting with the virtually vocal api",
     "homepage": "https://www.csmusic.net",
     "license": "MIT",
     "autoload": {
