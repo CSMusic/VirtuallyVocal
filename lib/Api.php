@@ -11,7 +11,6 @@ class Api {
     public static $vv_token;
     public static $token_timestamp;
     public static $vv_endpoint;
-    public static $states_list;
 
 
     public static function setTestMode($test)
@@ -109,20 +108,69 @@ class Api {
     }
     public static function getStateValue($state) // converts CS Music two letter state abbreviation into number value for Virtually Vocal.
     {
+        $states_list = [
+            ["AL" => 1],
+            ["AK" => 2],
+            ["AZ" => 3],
+            ["AR" => 4],
+            ["CA" => 5],
+            ["CO" => 6],
+            ["CT" => 7],
+            ["DE" => 8],
+            ["FL" => 9],
+            ["GA" => 10],
+            ["HI" => 11],
+            ["ID" => 12],
+            ["IL" => 13],
+            ["IN" => 14],
+            ["IA" => 15],
+            ["KS" => 16],
+            ["KY" => 17],
+            ["LA" => 18],
+            ["ME" => 19],
+            ["MD" => 20],
+            ["MA" => 21],
+            ["MI" => 22],
+            ["MN" => 23],
+            ["MS" => 24],
+            ["MO" => 25],
+            ["MT" => 26],
+            ["NE" => 27],
+            ["NV" => 28],
+            ["NH" => 29],
+            ["NJ" => 30],
+            ["NM" => 31],
+            ["NY" => 32],
+            ["NC" => 33],
+            ["ND" => 34],
+            ["OH" => 35],
+            ["OK" => 36],
+            ["OR" => 37],
+            ["PA" => 38],
+            ["RI" => 39],
+            ["SC" => 40],
+            ["SD" => 41],
+            ["TN" => 42],
+            ["TX" => 43],
+            ["UT" => 44],
+            ["VT" => 45],
+            ["VA" => 46],
+            ["WA" => 47],
+            ["WV" => 48],
+            ["WI" => 49],
+            ["WY" => 50],
+            ["DC" => 51],
+            ["Other" => 52]
+            ];
         if($state == "") {
             return 52; // Value for Other. Don't bother with states list.
         }
-
-        if(self::$states_list == null) {
-            self::getStates();
-        }
-        if(array_key_exists($state, self::$states_list)) {
-            return self::$states_list[$state];
+        if(array_key_exists($state, $states_list)) {
+            return $states_list[$state];
         }
         else { // state not found
             return 52; // Value for Other.
         }
-
     }
     public static function checkUserExists($email) {
 
@@ -180,36 +228,30 @@ class Api {
             $role = "vocal"; // student
         }
 
-        $existing_user = self::checkUserExists($Account->email);
-
-        if($existing_user == false) { // these fields are required by Virtually Vocal, so set if not found on existing user or on account.
-            if(!$Account->_profile_address_street) {
-                $Account->_profile_address_street = "unknown";
-            }
-            if(!$Account->_profile_address_city) {
-                $Account->_profile_address_city = "unknown";
-            }
-            if(!$Account->_profile_address_postalcode) {
-                $Account->_profile_address_postalcode = "00000";
-            }
-            if(!$Account->_profile_address_apt) {
-                $Account->_profile_address_apt = ""; // does not accept null
-            }
+        // these fields are required by Virtually Vocal, so set if not found on existing user or on account.
+        if(!$Account->_profile_address_street) {
+            $Account->_profile_address_street = "unknown";
         }
-        else {
-            $existing_user = $existing_user->data;
+        if(!$Account->_profile_address_city) {
+            $Account->_profile_address_city = "unknown";
         }
-        self::add("firstName", $existing_user !== false ? $existing_user->firstName : $Account->first_name);
-        self::add("lastName", $existing_user !== false ? $existing_user->lastName : $Account->last_name);
-        self::add("username", $existing_user !== false ? $existing_user->username : $Account->email);
+        if(!$Account->_profile_address_postalcode) {
+            $Account->_profile_address_postalcode = "00000";
+        }
+        if(!$Account->_profile_address_apt) {
+            $Account->_profile_address_apt = ""; // does not accept null
+        }
+        self::add("firstName", $Account->first_name);
+        self::add("lastName", $Account->last_name);
+        self::add("username", $Account->email);
         $password = self::generatePassword();
         self::add("password", $password); // this will only update if creating a new user. Ignored if updating a current user. 
-        self::add("address1", $existing_user !== false ? $existing_user->address1 : $Account->_profile_address_street);
-        self::add("address2", $existing_user !== false ? $existing_user->address2 : $Account->_profile_address_apt);
-        self::add("city", $existing_user !== false ? $existing_user->city : $Account->_profile_address_city);
-        $stateVal = $existing_user !== false ? $existing_user->stateId : self::getStateValue($Account->_profile_address_state);
+        self::add("address1", $Account->_profile_address_street);
+        self::add("address2", $Account->_profile_address_apt);
+        self::add("city", $Account->_profile_address_city);
+        $stateVal = self::getStateValue($Account->_profile_address_state);
         self::add("stateId", $stateVal);
-        self::add("zipcode", $existing_user !== false ? $existing_user->zipcode : $Account->_profile_address_postalcode);
+        self::add("zipcode", $Account->_profile_address_postalcode);
         self::add("email", $Account->email);
         self::add("rbSubscriptionId", "00000");
         self::add("source", "CSMUSIC");
@@ -228,40 +270,16 @@ class Api {
         curl_setopt($ch,CURLOPT_POST, count(self::$parameters));
         curl_setopt($ch,CURLOPT_POSTFIELDS, json_encode(self::$parameters));
         curl_setopt($ch, CURLOPT_FAILONERROR, true);
-
         $result = curl_exec($ch);
-        
         $json_result = json_decode($result);
-
         self::$parameters = null;
         if ($json_result->status == 400) {
             return false;
         } 
         else {
-            $vv_user = [
-                'password' => $password,
-                'existing_user' => $existing_user
-            ];
-            return $vv_user;
+            return $password;
         }
 	}
-
-    public static function getStates() 
-    {
-		$ch = curl_init();
-		curl_setopt($ch,CURLOPT_URL, self::vvEndpoint() . "common/get-states" );
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-
-        $result = curl_exec($ch);
-        curl_close($ch);
-        $states = json_decode($result);
-        $statesList = [];
-        foreach($states->data as $key => $state) {
-            $statesList[$state->abbreviation] = $state->value;
-        }
-        self::$states_list = $statesList;
-        return $statesList;
-    }
 }
 
 ?>
