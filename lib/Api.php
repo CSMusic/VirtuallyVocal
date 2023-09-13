@@ -126,8 +126,6 @@ class Api {
     }
     public static function checkUserExists($email) {
 
-        print_r($email);
-
         if(!self::checkToken()) {
             self::generateToken();
         }
