@@ -1,0 +1,12 @@
+{
+    "name": "csmusic/virtuallyvocal",
+    "type": "library",
+    "description": "classes for interacting with the virtually vocal api",
+    "homepage": "https://www.csmusic.net",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "CSMusic\\": "lib/"
+        }
+    }  
+}
