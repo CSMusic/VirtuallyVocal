@@ -5,7 +5,6 @@ namespace VirtuallyVocal;
 
 class Api {
     public static $test;
-    public static $parameters;
     public static $client_id;
 	public static $client_secret;
     public static $vv_token;
@@ -16,11 +15,6 @@ class Api {
     public static function setTestMode($test)
 	{
 		self::$test = $test;
-	}
-
-    public static function add($key,$value)
-	{
-		self::$parameters[$key] = $value;
 	}
     public static function setClientId($client_id)
 	{
@@ -70,28 +64,24 @@ class Api {
     }
     public static function generateToken()
     {
-        self::add("clientId", self::$client_id);
-        self::add("secret", self::$client_secret);
+        $parameters = Array();
+        $parameters["clientId"] = self::$client_id;
+        $parameters["secret"] = self::$client_secret;
+
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, self::vvEndpoint() . "auth/generate-token" );
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_POST, count(self::$parameters) );
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(self::$parameters) );
+        curl_setopt($ch, CURLOPT_POST, count($parameters) );
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($parameters) );
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
             'Content-Type: application/json'
         ));
         $result = curl_exec($ch);
-
-        
-
         $decoded = json_decode($result);
-
-        
 
         if($decoded->data != null) {
             self::$vv_token = $decoded->data;
         }
-        self::$parameters = null;
         $currentTimestamp = time();
         self::$token_timestamp = date("Y-m-d H:i:s", $currentTimestamp);
     }
@@ -109,58 +99,57 @@ class Api {
     public static function getStateValue($state) // converts CS Music two letter state abbreviation into number value for Virtually Vocal.
     {
         $states_list = [
-            ["AL" => 1],
-            ["AK" => 2],
-            ["AZ" => 3],
-            ["AR" => 4],
-            ["CA" => 5],
-            ["CO" => 6],
-            ["CT" => 7],
-            ["DE" => 8],
-            ["FL" => 9],
-            ["GA" => 10],
-            ["HI" => 11],
-            ["ID" => 12],
-            ["IL" => 13],
-            ["IN" => 14],
-            ["IA" => 15],
-            ["KS" => 16],
-            ["KY" => 17],
-            ["LA" => 18],
-            ["ME" => 19],
-            ["MD" => 20],
-            ["MA" => 21],
-            ["MI" => 22],
-            ["MN" => 23],
-            ["MS" => 24],
-            ["MO" => 25],
-            ["MT" => 26],
-            ["NE" => 27],
-            ["NV" => 28],
-            ["NH" => 29],
-            ["NJ" => 30],
-            ["NM" => 31],
-            ["NY" => 32],
-            ["NC" => 33],
-            ["ND" => 34],
-            ["OH" => 35],
-            ["OK" => 36],
-            ["OR" => 37],
-            ["PA" => 38],
-            ["RI" => 39],
-            ["SC" => 40],
-            ["SD" => 41],
-            ["TN" => 42],
-            ["TX" => 43],
-            ["UT" => 44],
-            ["VT" => 45],
-            ["VA" => 46],
-            ["WA" => 47],
-            ["WV" => 48],
-            ["WI" => 49],
-            ["WY" => 50],
-            ["DC" => 51],
-            ["Other" => 52]
+            "AL" => 1,
+            "AK" => 2,
+            "AZ" => 3,
+            "AR" => 4,
+            "CA" => 5,
+            "CO" => 6,
+            "CT" => 7,
+            "DE" => 8,
+            "FL" => 9,
+            "GA" => 10,
+            "HI" => 11,
+            "ID" => 12,
+            "IN" => 14,
+            "IA" => 15,
+            "KS" => 16,
+            "KY" => 17,
+            "LA" => 18,
+            "ME" => 19,
+            "MD" => 20,
+            "MA" => 21,
+            "MI" => 22,
+            "MN" => 23,
+            "MS" => 24,
+            "MO" => 25,
+            "MT" => 26,
+            "NE" => 27,
+            "NV" => 28,
+            "NH" => 29,
+            "NJ" => 30,
+            "NM" => 31,
+            "NY" => 32,
+            "NC" => 33,
+            "ND" => 34,
+            "OH" => 35,
+            "OK" => 36,
+            "OR" => 37,
+            "PA" => 38,
+            "RI" => 39,
+            "SC" => 40,
+            "SD" => 41,
+            "TN" => 42,
+            "TX" => 43,
+            "UT" => 44,
+            "VT" => 45,
+            "VA" => 46,
+            "WA" => 47,
+            "WV" => 48,
+            "WI" => 49,
+            "WY" => 50,
+            "DC" => 51,
+            "Other" => 52
             ];
         if($state == "") {
             return 52; // Value for Other. Don't bother with states list.
@@ -227,6 +216,7 @@ class Api {
         else {
             $role = "vocal"; // student
         }
+        $parameters = Array();
 
         // these fields are required by Virtually Vocal, so set if not found on existing user or on account.
         if(!$Account->_profile_address_street) {
@@ -241,21 +231,20 @@ class Api {
         if(!$Account->_profile_address_apt) {
             $Account->_profile_address_apt = ""; // does not accept null
         }
-        self::add("firstName", $Account->first_name);
-        self::add("lastName", $Account->last_name);
-        self::add("username", $Account->email);
+        $parameters['firstName'] = $Account->first_name;
+        $parameters['lastName'] = $Account->last_name;
+        $parameters['username'] = $Account->email;
         $password = self::generatePassword();
-        self::add("password", $password); // this will only update if creating a new user. Ignored if updating a current user. 
-        self::add("address1", $Account->_profile_address_street);
-        self::add("address2", $Account->_profile_address_apt);
-        self::add("city", $Account->_profile_address_city);
-        $stateVal = self::getStateValue($Account->_profile_address_state);
-        self::add("stateId", $stateVal);
-        self::add("zipcode", $Account->_profile_address_postalcode);
-        self::add("email", $Account->email);
-        self::add("rbSubscriptionId", "00000");
-        self::add("source", "CSMUSIC");
-        self::add("role", $role);
+        $parameters['password'] = $password;
+        $parameters['address1'] = $Account->_profile_address_street;
+        $parameters['address2'] = $Account->_profile_address_apt;
+        $parameters['city'] = $Account->_profile_address_city;
+        $parameters['stateId'] = self::getStateValue($Account->_profile_address_state);
+        $parameters['zipcode'] = $Account->_profile_address_postalcode;
+        $parameters['email'] = $Account->email;
+        $parameters['rbSubscriptionId'] = "00000";
+        $parameters['source'] = "CSMUSIC";
+        $parameters['role'] = $role;
         if(!self::checkToken()) {
             self::generateToken();
         }
@@ -267,17 +256,16 @@ class Api {
             'Authorization: Bearer ' . self::$vv_token,
             'Content-Type: application/json'
         ]);
-        curl_setopt($ch,CURLOPT_POST, count(self::$parameters));
-        curl_setopt($ch,CURLOPT_POSTFIELDS, json_encode(self::$parameters));
+        curl_setopt($ch,CURLOPT_POST, count($parameters));
+        curl_setopt($ch,CURLOPT_POSTFIELDS, json_encode($parameters));
         curl_setopt($ch, CURLOPT_FAILONERROR, true);
         $result = curl_exec($ch);
         $json_result = json_decode($result);
-        self::$parameters = null;
-        if ($json_result->status == 400) {
-            return false;
-        } 
-        else {
+        if($json_result->result == "Success") {
             return $password;
+        }
+        else {
+            return false;
         }
 	}
 }
