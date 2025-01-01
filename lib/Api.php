@@ -243,6 +243,7 @@ class Api {
         $parameters['zipcode'] = $Account->_profile_address_postalcode;
         $parameters['email'] = $Account->email;
         $parameters['rbSubscriptionId'] = "00000";
+        $parameters['autoLoginID'] = $Account->id;
         $parameters['source'] = "CSMUSIC";
         $parameters['role'] = $role;
         if(!self::checkToken()) {
